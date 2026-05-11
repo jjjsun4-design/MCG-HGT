@@ -100,77 +100,28 @@ expected HIT asset contents.
 
 ## Usage
 
-Run a help-level smoke check first:
+Train MCG-HGT on HIT CVS1 with the publication defaults:
 
 ```bash
-python scripts/smoke_test.py
+python -m mcg_hgt.train
 ```
 
-Train MCG-HGT on HIT CVS1 from the provided config:
+Common overrides stay available when needed:
 
 ```bash
-python scripts/train_from_config.py --config configs/hit_cvs1.yaml
-```
-
-Equivalent explicit command:
-
-```bash
-python -m mcg_hgt.train \
-  --device cuda:0 \
-  --k_fold 10 \
-  --batch_size 4096 \
-  --lr 1e-4 \
-  --wd 1e-5 \
-  --num_epochs 250 \
-  --graph_struct 3 \
-  --method 5 \
-  --data_dir data/HIT \
-  --ligand_embed data/HIT/ingredients_embeddings.csv \
-  --target_embed data/HIT/protein_embeddings.csv \
-  --in_dim 512 \
-  --h_dim 1024 \
-  --out_dim 512 \
-  --hgt_heads 8 \
-  --num_layers 3 \
-  --fanout 15 \
-  --neg_k 5 \
-  --cv_mode CVS1 \
-  --input_gate_type glu \
-  --score_gate gmu \
-  --semantic_gate etype \
-  --head_gate \
-  --residual_gate \
-  --checkpoint_dir checkpoints/HIT/CVS1_MCG-HGT
+python -m mcg_hgt.train --device cuda:1 --num_epochs 50
 ```
 
 Run inference for a pair list:
 
 ```bash
-python -m mcg_hgt.inference \
-  --data_dir data/HIT \
-  --ligand_embed data/HIT/ingredients_embeddings.csv \
-  --target_embed data/HIT/protein_embeddings.csv \
-  --checkpoint checkpoints/HIT/CVS1_MCG-HGT/best_fold1_auprc.pt \
-  --pairs examples/smoke/pairs.csv \
-  --output outputs/hit_scores.csv \
-  --device cuda:0 \
-  --in_dim 512 \
-  --h_dim 1024 \
-  --out_dim 512 \
-  --hgt_heads 8 \
-  --num_layers 3 \
-  --input_gate_type glu \
-  --score_gate gmu \
-  --semantic_gate etype \
-  --head_gate \
-  --residual_gate
+python -m mcg_hgt.inference
 ```
 
-In an environment with PyTorch and DGL installed, run a one-epoch toy training
-check:
+Use a custom pair list or output file with:
 
 ```bash
-python scripts/smoke_test.py --train --device cpu --epochs 1
+python -m mcg_hgt.inference --pairs path/to/pairs.csv --output outputs/scores.csv
 ```
 
 ## Pre-Training
@@ -181,14 +132,26 @@ utilities:
 ```text
 pre-training/
   esm/
+  scripts/
   src/
   ingredient_pre-training.ipynb
   target_pre-training.ipynb
 ```
 
-These notebooks document the ingredient and target feature generation workflow.
-They are included for reproducibility and attribution; the full generated HIT
-feature matrices are provided as release assets.
+The local Python scripts used for feature and graph preparation are also kept in
+`pre-training/scripts/`:
+
+- `extract_molmcl_molecule_embeddings.py`: generate ingredient molecular
+  embeddings from SMILES with a MolMCL checkpoint.
+- `extract_esm_protein_embeddings.py`: extract and align target protein
+  embeddings with ESM.
+- `build_graph_from_csv.py`: construct `edges.txt`,
+  `ingredient_similarity.txt`, and `target_similarity.txt` from curated CSV
+  files.
+- `pretrain_relation_alignment.py`: relation-similarity contrastive
+  pre-training for molecule and protein embeddings.
+
+The generated HIT feature matrices are provided as release assets.
 
 ## Release Asset Preparation
 
