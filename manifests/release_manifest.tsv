@@ -1,10 +1,8 @@
 artifact	path	description	required_for
-weights	weights/HIT_CVS1_MCG-HGT/best_fold*_auprc.pt	Pretrained MCG-HGT fold checkpoints for HIT CVS1	reproduce HIT CVS1 and inference
-weights	weights/BindingDB_CVS1_MCG-HGT/best_fold*_auprc.pt	Pretrained MCG-HGT fold checkpoints for BindingDB CVS1	reproduce BindingDB CVS1 and inference
-weights	weights/BioSNAP_CVS1_MCG-HGT/best_fold*_auprc.pt	Pretrained MCG-HGT fold checkpoints for BioSNAP CVS1	reproduce BioSNAP CVS1 and inference
-preprocessed	preprocessed/HIT/edges.txt	Observed compound-target interaction edges	HIT training/evaluation
-preprocessed	preprocessed/HIT/ingredient_similarity.txt	Compound-compound similarity edges	HIT graph construction
+weights	weights/HIT/CVS1_MCG-HGT/best_fold*_auprc.pt	Pretrained MCG-HGT fold checkpoints for HIT CVS1	HIT CVS1 reproduction and inference
+preprocessed	preprocessed/HIT/edges.txt	Observed ingredient-target interaction edges	HIT training and evaluation
+preprocessed	preprocessed/HIT/ingredient_similarity.txt	Ingredient-ingredient similarity edges	HIT graph construction
 preprocessed	preprocessed/HIT/target_similarity.txt	Target-target similarity edges	HIT graph construction
-preprocessed	preprocessed/HIT/ingredients_embeddings.csv	Precomputed molecular embeddings	HIT graph features
-preprocessed	preprocessed/HIT/protein_embeddings.csv	Precomputed protein embeddings	HIT graph features
-metadata	manifests/checksums.txt	SHA256 checksums for all release asset files	download verification
+preprocessed	preprocessed/HIT/ingredients_embeddings.csv	Precomputed molecular embeddings for HIT ingredients	HIT graph features
+preprocessed	preprocessed/HIT/protein_embeddings.csv	Precomputed protein embeddings for HIT targets	HIT graph features
+metadata	manifests/checksums.txt	SHA256 checksums for all HIT release asset files	download verification

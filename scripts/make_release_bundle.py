@@ -53,8 +53,8 @@ def main(argv: list[str] | None = None) -> int:
     output.mkdir(parents=True, exist_ok=True)
 
     assets = {
-        "MCG-HGT-preprocessed-inputs.tar.gz": ["preprocessed", "manifests", "README_RELEASE_ASSETS.md"],
-        "MCG-HGT-pretrained-weights.tar.gz": ["weights"],
+        "MCG-HGT-HIT-preprocessed-inputs.tar.gz": ["preprocessed", "manifests", "README_RELEASE_ASSETS.md"],
+        "MCG-HGT-HIT-CVS1-weights.tar.gz": ["weights"],
     }
     for asset_name, entries in assets.items():
         out_path = output / asset_name
