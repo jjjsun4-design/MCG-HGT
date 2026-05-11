@@ -18,10 +18,9 @@ This repository is the publication release for:
 > MCG-HGT: Multimodal Heterogeneous Graph Learning for Herbal
 > Ingredient-Target Interaction Prediction.
 
-The repository follows the compact release style of Multi-ITI and iCAM-Net:
-source code, runnable examples, pre-training utilities, HIT data manifests, and
-documentation are kept in GitHub, while full HIT preprocessed inputs and
-pretrained weights are distributed through the `v1.0.0` GitHub Release assets.
+Source code, runnable examples, pre-training utilities, HIT data manifests, and
+documentation are kept in GitHub. Full HIT preprocessed inputs and pretrained
+weights are distributed through the `v1.0.0` GitHub Release assets.
 
 ## Environment
 
@@ -52,51 +51,19 @@ MCG-HGT/
   examples/smoke/          Tiny example for command/interface checks
   pre-training/            Ingredient and target representation pre-training utilities
   manifests/               HIT release asset manifest
-  docs/                    Data/code availability and upstream attribution notes
+  docs/                    Data/code availability notes
 ```
 
-The `pre-training/` directory mirrors the Multi-ITI release layout and contains
-the ingredient and target feature-pretraining notebooks/utilities used by the
-inherited workflow. Large pretrained encoders and generated feature matrices are
-not committed to Git history.
+The `pre-training/` directory contains the ingredient and target
+feature-pretraining notebooks/utilities. Large pretrained encoders and generated
+feature matrices are not committed to Git history.
 
 ## Data
 
-This GitHub-only release uses the HIT dataset as the public full-data example.
-Download the HIT preprocessed inputs and HIT pretrained MCG-HGT checkpoints from
+HIT preprocessed inputs and pretrained MCG-HGT checkpoints are available from
 the `v1.0.0` GitHub Release:
 
 [https://github.com/jjjsun4-design/MCG-HGT/releases/tag/v1.0.0](https://github.com/jjjsun4-design/MCG-HGT/releases/tag/v1.0.0)
-
-Download, extract, and verify:
-
-```bash
-python scripts/download_release_assets.py --tag v1.0.0 --out . --extract --verify
-```
-
-After extracting the release assets, arrange files as:
-
-```text
-data/
-  HIT/
-    edges.txt
-    ingredient_similarity.txt
-    target_similarity.txt
-    ingredients_embeddings.csv
-    protein_embeddings.csv
-checkpoints/
-  HIT/CVS1_MCG-HGT/
-    best_fold1_auprc.pt
-    ...
-```
-
-If you use the download helper with `--extract`, the assets unpack as
-`preprocessed/HIT/` and `weights/HIT/CVS1_MCG-HGT/`; move or symlink them to the
-`data/HIT/` and `checkpoints/HIT/CVS1_MCG-HGT/` paths shown above before running
-the training commands.
-
-See `manifests/release_manifest.tsv` and `docs/DATA_AVAILABILITY.md` for the
-expected HIT asset contents.
 
 ## Usage
 
@@ -183,18 +150,11 @@ If you use MCG-HGT, please cite the accompanying manuscript and this repository.
 
 ## Acknowledgement
 
-This release preserves attribution to the open-source tools and prior work used
-in the project:
+This release uses open-source scientific machine-learning tools, including:
 
 - DGL: https://www.dgl.ai/
 - KPGT: https://github.com/lihan97/KPGT
 - ESM: https://github.com/facebookresearch/esm
-- Multi-ITI: https://github.com/Xudong-Liang/Multi-ITI
-- iCAM-Net: https://github.com/qunshanxingyun/iCAM-Net
-
-The original working tree was derived from a Multi-ITI-style heterogeneous graph
-workflow and then extended with residual-gated HGT propagation, semantic gates,
-gated scoring, and InfoNCE ranking supervision for MCG-HGT.
 
 ## License
 

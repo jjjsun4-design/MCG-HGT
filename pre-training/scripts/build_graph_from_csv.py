@@ -4,9 +4,9 @@
 """
 从 BindingDB/BioSNAP 风格的 train/val/test CSV
 （列：DrugBank ID, Gene, Label, SMILES, Target Sequence）
-构建 Multi-ITI 论文风格的图数据 + 清洗后的带 index 的数据集。
+构建论文使用的图数据 + 清洗后的带 index 的数据集。
 
-相似度完全按 Multi-ITI 文章定义：
+相似度按本文实验设置定义：
 
 1) 成分相似度（ingredient_similarity.txt）
    - 对每个成分的 SMILES 计算 ECFP4 (Morgan, radius=2, nBits=1024) 指纹
@@ -198,7 +198,7 @@ def compute_target_similarity_sw(target_df: pd.DataFrame,
                                  threshold: float = TARGET_SW_THRESHOLD):
     """
     使用 Smith-Waterman 局部比对 + 归一化 SW 分数计算靶点之间的序列相似度，
-    完全对应 Multi-ITI 论文里的定义：
+    对应本文实验设置中的定义：
 
       SW_normalized(S_i, S_j) = SW(S_i, S_j) / sqrt( SW(S_i, S_i) * SW(S_j, S_j) )
 
@@ -395,4 +395,3 @@ if __name__ == "__main__":
         test_path="test.csv",
         out_dir="."
     )
-

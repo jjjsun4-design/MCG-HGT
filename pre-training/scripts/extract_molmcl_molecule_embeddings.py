@@ -148,7 +148,7 @@ def main():
     """
     # ============================== 用户配置区 ===============================
     # 请在这里修改你的文件路径和参数
-    INPUT_FILE = "/home/sun/Multi-ITI/data/1237ingredients.xlsx" # !! 修改为你的输入文件路径 !!
+    INPUT_FILE = "data/HIT/1237ingredients.xlsx" # !! 修改为你的输入文件路径 !!
     OUTPUT_FILE = "my_embeddings.npz"                          # !! 修改为你想要的输出文件名 !!
     global output_file
     output_file = "my_embeddings_ligand.pt"
