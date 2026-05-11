@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Local environments
+.env
+.env.*
+venv/
+.venv/
+env/
+
+# Large model and data artifacts
+checkpoints/
+data/
+figures/
+outputs/
+runs/
+wandb/
+*.pt
+*.pth
+*.pkl
+*.pickle
+*.npz
+*.npy
+*.h5
+*.hdf5
+*.tgz
+*.tar
+*.tar.gz
+*.zip
+*.7z
+
+# Credentials
+*.pem
+*.key
+*token*
+*secret*
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

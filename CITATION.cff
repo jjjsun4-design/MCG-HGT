@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use MCG-HGT, please cite the accompanying manuscript."
+title: "MCG-HGT: Multimodal Heterogeneous Graph Learning for Herbal Ingredient-Target Interaction Prediction"
+authors:
+  - family-names: Sun
+    given-names: Jiehui
+  - family-names: Li
+    given-names: Jinyu
+version: 1.0.0
+repository-code: "https://github.com/jjjsun4-design/MCG-HGT"
+license: MIT
