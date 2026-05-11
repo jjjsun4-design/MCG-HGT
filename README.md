@@ -11,6 +11,8 @@ heterogeneous graph, Heterogeneous Graph Transformer (HGT) message passing,
 residual/semantic gates, and a gated bilinear scorer for interaction
 prediction.
 
+![MCG-HGT architecture](assets/mcg-hgt-architecture.png)
+
 This repository is the publication release for:
 
 > MCG-HGT: Multimodal Heterogeneous Graph Learning for Herbal
@@ -43,7 +45,7 @@ runtime if the pinned packages are not available from your package indexes.
 
 ```text
 MCG-HGT/
-  assets/                  Overview figure used in the manuscript/repository
+  assets/                  Overview and architecture figures used in the manuscript/repository
   mcg_hgt/                 Main MCG-HGT model, graph, training, evaluation, inference code
   scripts/                 Reproducibility, smoke-test, and release helper scripts
   configs/                 HIT CVS1 configuration
