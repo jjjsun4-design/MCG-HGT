@@ -7,4 +7,4 @@ preprocessed	preprocessed/HIT/ingredient_similarity.txt	Compound-compound simila
 preprocessed	preprocessed/HIT/target_similarity.txt	Target-target similarity edges	HIT graph construction
 preprocessed	preprocessed/HIT/ingredients_embeddings.csv	Precomputed molecular embeddings	HIT graph features
 preprocessed	preprocessed/HIT/protein_embeddings.csv	Precomputed protein embeddings	HIT graph features
-metadata	manifests/checksums.txt	SHA256 checksums for all Zenodo files	download verification
+metadata	manifests/checksums.txt	SHA256 checksums for all release asset files	download verification

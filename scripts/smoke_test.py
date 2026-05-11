@@ -35,6 +35,8 @@ def main(argv: list[str] | None = None) -> int:
         [sys.executable, "-m", "mcg_hgt.train", "--help"],
         [sys.executable, "-m", "mcg_hgt.inference", "--help"],
         [sys.executable, "-m", "mcg_hgt.evaluate", "--help"],
+        [sys.executable, "scripts/download_release_assets.py", "--help"],
+        [sys.executable, "scripts/make_release_bundle.py", "--help"],
     ]
     for cmd in help_cmds:
         subprocess.run(cmd, cwd=root, check=True, stdout=subprocess.DEVNULL)

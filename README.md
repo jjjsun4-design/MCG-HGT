@@ -15,11 +15,8 @@ This repository is the publication release for:
 
 The GitHub repository contains source code, configuration files, small smoke-test
 inputs, and data manifests. Large pretrained checkpoints and full preprocessed
-input matrices are intentionally distributed through Zenodo, not Git.
-
-Important: `10.5281/zenodo.15088340` currently resolves to a DSSA-PPI record, not
-an MCG-HGT record. Replace `ZENODO_RECORD_ID` below with the final MCG-HGT Zenodo
-record after publication.
+input matrices are distributed as GitHub Release assets in this same repository,
+rather than being committed into Git history.
 
 ## Installation
 
@@ -41,7 +38,7 @@ runtime if the pinned packages are not available from your package indexes.
 
 ## Data Layout
 
-After downloading the Zenodo artifact, arrange files as:
+After downloading the release artifacts, arrange files as:
 
 ```text
 data/
@@ -62,11 +59,11 @@ checkpoints/
 Download helper:
 
 ```bash
-python scripts/download_zenodo.py --record ZENODO_RECORD_ID --out data
+python scripts/download_release_assets.py --tag v1.0.0 --out .
 ```
 
-See `manifests/zenodo_manifest.tsv` and `docs/DATA_AVAILABILITY.md` for the
-expected Zenodo archive contents.
+See `manifests/release_manifest.tsv` and `docs/DATA_AVAILABILITY.md` for the
+expected release asset contents.
 
 ## Training
 
@@ -149,18 +146,19 @@ check:
 python scripts/smoke_test.py --train --device cpu --epochs 1
 ```
 
-## Zenodo Bundle Preparation
+## GitHub Release Artifact Preparation
 
-Prepare the full artifact directory outside the Git repository, then bundle it:
+Prepare the full artifact directory outside the Git repository, then bundle it
+into GitHub Release assets:
 
 ```bash
-python scripts/make_zenodo_bundle.py \
-  --source /path/to/MCG-HGT-zenodo-artifacts \
-  --output MCG-HGT-zenodo-artifacts.tar.gz
+python scripts/make_release_bundle.py \
+  --source /path/to/MCG-HGT-release-artifacts \
+  --output-dir release-assets
 ```
 
-Upload the resulting archive to a Zenodo record titled for MCG-HGT and use that
-DOI in the manuscript.
+Upload the resulting files to the `v1.0.0` GitHub Release. Release assets are
+used for large files because ordinary Git repository files should remain small.
 
 ## Acknowledgements
 

@@ -1,21 +1,19 @@
-# Data Availability
+# Data And Code Availability
 
-The GitHub repository intentionally excludes pretrained weights and large
-preprocessed input matrices. Those files should be distributed through a Zenodo
-record dedicated to MCG-HGT.
+The source code, data manifests, pretrained MCG-HGT model weights, and
+preprocessed model input data are distributed through the public GitHub
+repository and its release assets:
 
-The DOI `10.5281/zenodo.15088340` was checked during release preparation and
-currently resolves to a record titled `DSSA-PPI data`; it should not be used for
-MCG-HGT unless the Zenodo metadata and files are corrected.
+https://github.com/jjjsun4-design/MCG-HGT
 
-Recommended manuscript wording after the MCG-HGT Zenodo record is published:
+Recommended manuscript wording:
 
-> The pretrained MCG-HGT model weights and preprocessed model input data are
-> available on Zenodo at [correct MCG-HGT DOI]. The source code, data manifests,
-> and reproduction scripts are openly available at
-> https://github.com/jjjsun4-design/MCG-HGT.
+> The source code, data manifests, pretrained MCG-HGT model weights, and
+> preprocessed model input data that support the findings of this manuscript are
+> openly available in the GitHub repository
+> https://github.com/jjjsun4-design/MCG-HGT and its associated release assets.
 
-Recommended Zenodo archive layout:
+Recommended GitHub Release asset layout:
 
 ```text
 weights/
@@ -28,6 +26,6 @@ preprocessed/
   BioSNAP/
 manifests/
   checksums.txt
-  zenodo_manifest.tsv
-README_ZENODO.md
+  release_manifest.tsv
+README_RELEASE_ASSETS.md
 ```
