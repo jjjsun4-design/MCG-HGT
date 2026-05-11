@@ -10,7 +10,7 @@ from pathlib import Path
 def _write_embeddings(path: Path, n_rows: int, dim: int) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.writer(handle)
+        writer = csv.writer(handle, lineterminator="\n")
         writer.writerow(["node_id"] + [f"f{i}" for i in range(dim)])
         for i in range(n_rows):
             writer.writerow([i] + [round(((i + 1) * (j + 1)) / 100.0, 6) for j in range(dim)])
