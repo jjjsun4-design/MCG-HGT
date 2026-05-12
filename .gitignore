@@ -16,11 +16,14 @@ env/
 
 # Large model and data artifacts
 checkpoints/
-data/
 figures/
 outputs/
 runs/
 wandb/
+data/*
+!data/.gitkeep
+!data/DATA_AVAILABILITY.md
+!data/release_manifest.tsv
 *.pt
 *.pth
 *.pkl

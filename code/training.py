@@ -36,12 +36,12 @@ from torch.optim.swa_utils import AveragedModel   # 用作 EMA
 
 # =============== Package imports ===============
 try:
-    from .model import HGTModel as Model
-    from .data import (
+    from model import HGTModel as Model
+    from data import (
         set_seed, process_data, build_graph, compute_loss, remove_unseen_nodes
     )
     try:
-        from .data import augment_similarity_graph  # type: ignore
+        from data import augment_similarity_graph  # type: ignore
     except Exception:
         augment_similarity_graph = None
 except ImportError:

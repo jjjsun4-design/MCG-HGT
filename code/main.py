@@ -69,11 +69,11 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     import torch
 
-    from .data import build_graph, process_data
-    from .training import _augment_similarity_graph_fallback, train
+    from data import build_graph, process_data
+    from training import _augment_similarity_graph_fallback, train
 
     try:
-        from .data import augment_similarity_graph
+        from data import augment_similarity_graph
     except Exception:
         augment_similarity_graph = None
 

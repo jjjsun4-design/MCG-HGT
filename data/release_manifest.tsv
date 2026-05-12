@@ -5,4 +5,4 @@ preprocessed	preprocessed/HIT/ingredient_similarity.txt	Ingredient-ingredient si
 preprocessed	preprocessed/HIT/target_similarity.txt	Target-target similarity edges	HIT graph construction
 preprocessed	preprocessed/HIT/ingredients_embeddings.csv	Precomputed molecular embeddings for HIT ingredients	HIT graph features
 preprocessed	preprocessed/HIT/protein_embeddings.csv	Precomputed protein embeddings for HIT targets	HIT graph features
-metadata	manifests/checksums.txt	SHA256 checksums for all HIT release asset files	download verification
+metadata	SHA256SUMS.txt	SHA256 checksums for GitHub Release assets	download verification

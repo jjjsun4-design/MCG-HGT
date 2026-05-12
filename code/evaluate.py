@@ -41,7 +41,7 @@ def main(argv: list[str] | None = None) -> int:
     import numpy as np
     from sklearn.metrics import average_precision_score, roc_auc_score
 
-    from .inference import main as inference_main
+    from inference import main as inference_main
 
     labels = _read_labels(args.labels)
     score_path = Path(args.scores_csv) if args.scores_csv else Path(tempfile.mkstemp(suffix=".csv")[1])

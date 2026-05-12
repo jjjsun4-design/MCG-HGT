@@ -81,8 +81,8 @@ def main(argv: list[str] | None = None) -> int:
     import torch
     import dgl
 
-    from .data import build_graph, process_data
-    from .model import HGTModel
+    from data import build_graph, process_data
+    from model import HGTModel
 
     device = torch.device(args.device if torch.cuda.is_available() and args.device != "cpu" else "cpu")
     edges, is_edges, ts_edges, initial_features = process_data(args)
