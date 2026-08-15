@@ -5,6 +5,8 @@ import hashlib
 import tarfile
 from pathlib import Path
 
+from checkpoint_contract import validate_portable_checkpoint_payload
+
 
 MAX_ASSET_BYTES = 1900 * 1024 * 1024
 
@@ -34,6 +36,30 @@ def add_tree(tar: tarfile.TarFile, path: Path, arc_prefix: str) -> None:
         tar.add(item, arcname=f"{arc_prefix}/{item.relative_to(path).as_posix()}")
 
 
+def validate_release_weights(weights_dir: Path) -> None:
+    checkpoints = sorted(
+        path for path in weights_dir.rglob("*")
+        if path.is_file() and path.suffix.lower() in {".pt", ".pth"}
+    )
+    if not checkpoints:
+        raise ValueError(f"No .pt/.pth checkpoints found under {weights_dir}")
+    try:
+        import torch
+    except ImportError as exc:
+        raise RuntimeError("PyTorch is required to validate release checkpoints") from exc
+    for checkpoint in checkpoints:
+        try:
+            try:
+                payload = torch.load(checkpoint, map_location="cpu", weights_only=True)
+            except TypeError:
+                payload = torch.load(checkpoint, map_location="cpu")
+            validate_portable_checkpoint_payload(payload)
+        except Exception as exc:
+            raise ValueError(
+                f"Release checkpoint rejected: {checkpoint}: {exc}"
+            ) from exc
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Create GitHub Release assets for MCG-HGT.")
     parser.add_argument("--source", required=True, help="Directory containing weights/, preprocessed/, manifests/.")
@@ -48,6 +74,11 @@ def main(argv: list[str] | None = None) -> int:
     missing = [name for name in ["weights", "preprocessed"] if not (source / name).exists()]
     if missing:
         raise SystemExit(f"Missing required directories: {', '.join(missing)}")
+
+    try:
+        validate_release_weights(source / "weights")
+    except (ValueError, RuntimeError) as exc:
+        raise SystemExit(str(exc)) from exc
 
     write_checksums(source)
     output.mkdir(parents=True, exist_ok=True)

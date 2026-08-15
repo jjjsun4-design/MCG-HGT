@@ -4,8 +4,26 @@ title: "MCG-HGT: Multimodal Heterogeneous Graph Learning for Herbal Ingredient-T
 authors:
   - family-names: Sun
     given-names: Jiehui
+  - family-names: Wang
+    given-names: Jiao
+  - family-names: Cai
+    given-names: Wen
+  - family-names: Sun
+    given-names: Yuhao
+  - family-names: Liang
+    given-names: Tian
+  - family-names: Wu
+    given-names: Juhong
+  - family-names: Liu
+    given-names: Di
+  - family-names: Gao
+    given-names: Ping
+  - family-names: Feng
+    given-names: Xianmin
+    email: fengxianmin28@163.com
   - family-names: Li
     given-names: Jinyu
+    email: j.li@fzu.edu.cn
 version: 1.0.0
 repository-code: "https://github.com/jjjsun4-design/MCG-HGT"
 license: MIT

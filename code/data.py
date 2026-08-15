@@ -9,6 +9,8 @@ utlis.py
     * 通过 args.ablate_ligand_llm / args.ablate_target_llm 控制是否消融
     * 通过 args.llm_ablation_mode 控制模式：zero / random / shuffle
 """
+from __future__ import annotations
+
 from pathlib import Path
 import os
 import random
@@ -391,4 +393,3 @@ def augment_similarity_graph(g: dgl.DGLHeteroGraph) -> dgl.DGLHeteroGraph:
     g = _add_missing_self_loops('is')
     g = _add_missing_self_loops('ts')
     return g
-

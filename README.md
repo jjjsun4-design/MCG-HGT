@@ -30,6 +30,9 @@ https://github.com/jjjsun4-design/MCG-HGT/releases/tag/v1.0.0
 
 ## Environment
 
+Use Python 3.10 or newer with PyTorch and DGL. Install the supplied environment
+or the Python requirements:
+
 ```bash
 conda env create -f environment.yml
 conda activate mcg-hgt
@@ -43,10 +46,16 @@ python -m pip install -r requirements.txt
 
 ## Usage
 
-Train MCG-HGT on HIT CVS1 with the publication defaults:
+Train the HIT 2.0 CVS1 model with the publication configuration:
 
 ```bash
 python code/main.py
+```
+
+Select another evaluation protocol with `--cv_mode`, for example:
+
+```bash
+python code/main.py --cv_mode CVS4
 ```
 
 Run inference:
@@ -68,7 +77,7 @@ If you use MCG-HGT, please cite the accompanying manuscript and this repository.
 ```bibtex
 @software{mcg_hgt_2026,
   title = {MCG-HGT: Multimodal Heterogeneous Graph Learning for Herbal Ingredient-Target Interaction Prediction},
-  author = {Sun, Jiehui and Li, Jinyu},
+  author = {Sun, Jiehui and Wang, Jiao and Cai, Wen and Sun, Yuhao and Liang, Tian and Wu, Juhong and Liu, Di and Gao, Ping and Feng, Xianmin and Li, Jinyu},
   year = {2026},
   url = {https://github.com/jjjsun4-design/MCG-HGT}
 }
