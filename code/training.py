@@ -135,7 +135,7 @@ def _checkpoint_model_metadata(model, args) -> Dict[str, Any]:
         "head_gate": getattr(args, "head_gate", False),
         "proj_hidden_mult": architecture.get(
             "input_projection_hidden_multiplier",
-            getattr(args, "proj_hidden_mult", 2),
+            getattr(args, "proj_hidden_mult", 4),
         ),
         "proj_dropout": getattr(args, "proj_dropout", 0.2),
     }
@@ -2158,7 +2158,7 @@ def train(args, hetero_graph: dgl.DGLHeteroGraph, rel_list, device):
                 f"weight_shared={getattr(args,'share_hgt_layers',False)} | "
                 f"hgt_parameter_sets="
                 f"{1 if getattr(args,'share_hgt_layers',False) else args.num_layers} | "
-                f"proj_hidden_mult={getattr(args,'proj_hidden_mult',2)}\n"
+                f"proj_hidden_mult={getattr(args,'proj_hidden_mult',4)}\n"
                 f"[Model] input_gate={getattr(args,'input_gate_type','none')} "
                 f"(reduce={getattr(args,'input_gate_reduce',4)}) | "
                 f"residual_gate={getattr(args,'residual_gate',False)} | "

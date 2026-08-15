@@ -165,7 +165,7 @@ class _FullGraphHGTEncoder(nn.Module):
         head_gate: bool = False,
         residual_message_prior: float | None = None,
         feature_fusion: str = 'none', feature_graph_prior: float = 0.1,
-        proj_hidden_mult: int = 2, proj_dropout: float = 0.2,
+        proj_hidden_mult: int = 4, proj_dropout: float = 0.2,
         share_hgt_layers: bool = False,
     ):
         super().__init__()
@@ -608,7 +608,7 @@ class HGTModel(nn.Module):
         residual_message_prior = _getattr(args, 'residual_message_prior', None)
         feature_fusion = _getattr(args, 'feature_fusion', 'none')
         feature_graph_prior = _getattr(args, 'feature_graph_prior', 0.1)
-        proj_hidden_mult = _getattr(args, 'proj_hidden_mult', 2)
+        proj_hidden_mult = _getattr(args, 'proj_hidden_mult', 4)
         proj_dropout = _getattr(args, 'proj_dropout', 0.2)
         share_hgt_layers = _getattr(args, 'share_hgt_layers', False)
         score_fusion = str(_getattr(args, 'score_fusion', 'none')).strip().lower()
