@@ -23,11 +23,6 @@ requirements.txt       Python dependencies
 environment.yml        Conda environment
 ```
 
-Full HIT preprocessed inputs and pretrained MCG-HGT checkpoints are available
-from the `v1.0.0` release assets:
-
-https://github.com/jjjsun4-design/MCG-HGT/releases/tag/v1.0.0
-
 ## Environment
 
 Use Python 3.10 or newer with PyTorch and DGL. Install the supplied environment
@@ -61,13 +56,8 @@ python code/main.py --cv_mode CVS4
 Run inference:
 
 ```bash
-python code/inference.py
-```
-
-Use a custom pair list or output file with:
-
-```bash
-python code/inference.py --pairs path/to/pairs.csv --output outputs/scores.csv
+python code/inference.py --checkpoint path/to/checkpoint.pt \
+  --pairs path/to/pairs.csv --output outputs/scores.csv
 ```
 
 ## Citation
