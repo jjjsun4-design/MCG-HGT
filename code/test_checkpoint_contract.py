@@ -82,7 +82,7 @@ class CheckpointContractTests(unittest.TestCase):
         self.assertIn("encoder.layers.0.k_linear.weight", normalized)
         self.assertFalse(config["share_hgt_layers"])
 
-    def test_legacy_formula_shapes_are_rejected(self):
+    def test_nonmatching_formula_shapes_are_rejected(self):
         cases = {
             "residual_gate_input": (
                 "encoder.res_gate.0.weight", FakeTensor(2048, 2048)

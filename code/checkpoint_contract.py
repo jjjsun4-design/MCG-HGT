@@ -123,7 +123,7 @@ def infer_state_contract(
             if residual_shapes
             and all(len(shape) == 2 and shape[1] == 2 * shape[0]
                     for shape in residual_shapes)
-            else "legacy_message_only"
+            else "message_only"
         )
     facts["head_gate"] = any(
         key.startswith("encoder.head_alphas.") for key in keys
@@ -156,14 +156,14 @@ def infer_state_contract(
             if len(bilinear_shape) == 2
             and bilinear_shape[0] == bilinear_shape[1]
             and bilinear_shape[0] == facts.get("out_dim")
-            else "legacy_factorized_dot"
+            else "factorized_dot"
         )
         facts["gmu_gate_input"] = (
             "projected_source_target_hadamard"
             if len(gate_shape) == 2
             and gate_shape[0] == 1
             and gate_shape[1] == 3 * facts.get("out_dim", -1)
-            else "legacy_source_target"
+            else "source_target"
         )
     else:
         facts["score_gate"] = "none"
@@ -181,7 +181,7 @@ def infer_state_contract(
             and all(len(shape) == 2
                     and shape[1] == 3 * facts.get("out_dim", -1)
                     for shape in semantic_shapes)
-            else "legacy_source_target"
+            else "source_target"
         )
     for key, value in normalized.items():
         if (
