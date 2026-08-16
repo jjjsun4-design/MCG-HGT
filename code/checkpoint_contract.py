@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, Mapping, Tuple
 
 
-CHECKPOINT_SCHEMA_VERSION = 1
+CHECKPOINT_SCHEMA_VERSION = 2
 FULL_RELEASE_GRAPH_SCOPE = "full_release_graph"
 FOLD_GRAPH_SCOPES = frozenset({
     "fold_specific_message_graph",
@@ -19,7 +20,9 @@ MODEL_CONFIG_FIELDS = (
     "residual_message_prior", "gate_bias", "feature_fusion",
     "feature_graph_prior", "score_gate", "score_fusion",
     "score_graph_prior", "film_condition", "semantic_gate", "sem_hidden",
-    "sem_gate_bias", "head_gate", "proj_hidden_mult", "proj_dropout",
+    "sem_gate_bias", "head_gate", "input_projection",
+    "residual_gate_input", "gmu_gate_input", "bilinear_form",
+    "semantic_gate_input",
 )
 MODEL_CONFIG_FIELD_SET = frozenset(MODEL_CONFIG_FIELDS)
 
@@ -27,13 +30,13 @@ MODEL_CONFIG_FIELD_SET = frozenset(MODEL_CONFIG_FIELDS)
 def architecture_id_for(config: Mapping[str, Any]) -> str:
     encoder_type = str(config.get("encoder_type", "")).strip().lower()
     if encoder_type == "feature_only":
-        return "mcg_hgt_feature_only_v1"
+        return "mcg_hgt_feature_only_v2"
     if encoder_type != "hgt":
         raise ValueError(f"Unsupported encoder_type: {encoder_type!r}")
     return (
-        "mcg_hgt_weight_shared_recurrent_v1"
+        "mcg_hgt_weight_shared_recurrent_v2"
         if bool(config.get("share_hgt_layers"))
-        else "mcg_hgt_independent_layers_v1"
+        else "mcg_hgt_independent_layers_v2"
     )
 
 
@@ -107,9 +110,21 @@ def infer_state_contract(
         if last_shape:
             facts["out_dim"] = last_shape[0]
 
-    facts["residual_gate"] = any(
-        key.startswith("encoder.res_gate.") for key in keys
-    )
+    residual_keys = [
+        key for key in keys
+        if re.fullmatch(r"encoder\.res_gate\.\d+\.weight", key)
+    ]
+    has_residual_state = any(key.startswith("encoder.res_gate.") for key in keys)
+    facts["residual_gate"] = has_residual_state
+    if has_residual_state:
+        residual_shapes = [_shape(normalized[key]) for key in residual_keys]
+        facts["residual_gate_input"] = (
+            "message_residual_concat"
+            if residual_shapes
+            and all(len(shape) == 2 and shape[1] == 2 * shape[0]
+                    for shape in residual_shapes)
+            else "legacy_message_only"
+        )
     facts["head_gate"] = any(
         key.startswith("encoder.head_alphas.") for key in keys
     )
@@ -134,17 +149,50 @@ def infer_state_contract(
         facts["score_gate"] = "film"
     elif any(key.startswith("pred.scorer.gate.") for key in keys):
         facts["score_gate"] = "gmu"
+        bilinear_shape = _shape(normalized.get("pred.scorer.W_b"))
+        gate_shape = _shape(normalized.get("pred.scorer.gate.weight"))
+        facts["bilinear_form"] = (
+            "full_matrix"
+            if len(bilinear_shape) == 2
+            and bilinear_shape[0] == bilinear_shape[1]
+            and bilinear_shape[0] == facts.get("out_dim")
+            else "legacy_factorized_dot"
+        )
+        facts["gmu_gate_input"] = (
+            "projected_source_target_hadamard"
+            if len(gate_shape) == 2
+            and gate_shape[0] == 1
+            and gate_shape[1] == 3 * facts.get("out_dim", -1)
+            else "legacy_source_target"
+        )
     else:
         facts["score_gate"] = "none"
     facts["semantic_gate"] = (
         "etype" if any(key.startswith("pred.rel_gate.") for key in keys) else "none"
     )
+    if facts["semantic_gate"] == "etype":
+        semantic_shapes = [
+            _shape(value) for key, value in normalized.items()
+            if re.fullmatch(r"pred\.rel_gate\..+\.0\.weight", key)
+        ]
+        facts["semantic_gate_input"] = (
+            "source_target_hadamard"
+            if semantic_shapes
+            and all(len(shape) == 2
+                    and shape[1] == 3 * facts.get("out_dim", -1)
+                    for shape in semantic_shapes)
+            else "legacy_source_target"
+        )
     for key, value in normalized.items():
-        if key.startswith("encoder.input_proj.") and key.endswith(".3.weight"):
+        if (
+            key.startswith("encoder.input_proj.")
+            and key.endswith(".weight")
+            and key.count(".") == 3
+        ):
             shape = _shape(value)
             if len(shape) == 2 and shape[0] > 0:
                 facts["in_dim"] = shape[0]
-                facts["proj_hidden_mult"] = max(1, shape[1] // shape[0])
+                facts["input_projection"] = "type_specific_linear"
                 break
     return normalized, facts
 
@@ -169,6 +217,19 @@ def validate_model_config(config: Mapping[str, Any]) -> Dict[str, Any]:
         )
         if int(result["hgt_parameter_sets"]) != expected_sets:
             raise ValueError("hgt_parameter_sets conflicts with sharing configuration")
+        formula_contract = {
+            "input_projection": "type_specific_linear",
+            "residual_gate_input": "message_residual_concat",
+            "gmu_gate_input": "projected_source_target_hadamard",
+            "bilinear_form": "full_matrix",
+            "semantic_gate_input": "source_target_hadamard",
+        }
+        for field, expected in formula_contract.items():
+            if result[field] != expected:
+                raise ValueError(
+                    f"{field}={result[field]!r} is not the manuscript formula "
+                    f"implementation {expected!r}"
+                )
     return result
 
 

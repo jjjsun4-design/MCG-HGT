@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
-"""
-model_gated.py — HGT + 输入门(SE/GLU) + 门控残差 + 打分头(GMU/FiLM) +
-                 【关系级语义门】+【注意力头门】 + 【类型化输入MLP统一维度】
--------------------------------------------------------------------------------
-在原始功能完全保留的基础上，新增/修正：
-- 为每个节点类型添加一套两层 MLP（GELU + Dropout + LayerNorm），将原始特征
-  统一到 in_dim；同构化时不再携带 features，改为在 forward 里拼接统一后的特征。
-- HGTConv 的 heads 改为第三个位置参数（不要再用 num_heads=... 避免冲突）。
-- 关系语义门的偏置设在最后一个 Linear，而不是 Sigmoid。
+"""Formula-aligned MCG-HGT encoder and interaction scorer.
+
+The publication implementation uses type-specific linear input projections,
+relation-aware HGT propagation, concatenation-conditioned residual gates, an
+explicit bilinear compatibility matrix, and Hadamard-augmented GMU and
+relation-semantic gates.
 """
 from __future__ import annotations
 import math
@@ -34,6 +31,17 @@ def _ensure_divisible(dim: int, heads: int) -> None:
 
 def _etype_key(etype: Tuple[str, str, str]) -> str:
     return f"{etype[0]}__{etype[1]}__{etype[2]}"
+
+
+def _gated_residual(
+    message: torch.Tensor,
+    residual: torch.Tensor,
+    gate_layer: nn.Module,
+) -> torch.Tensor:
+    """Apply the element-wise residual fusion in manuscript Eqs. (12)-(13)."""
+    gate_input = torch.cat([message, residual], dim=-1)
+    gate = torch.sigmoid(gate_layer(gate_input))
+    return gate * message + (1.0 - gate) * residual
 
 
 # -------------------------- 输入门控 --------------------------
@@ -74,13 +82,17 @@ class _GMUScore(nn.Module):
         super().__init__()
         self.proj_u = nn.Linear(dim, dim, bias=False)
         self.proj_v = nn.Linear(dim, dim, bias=False)
-        h = max(32, dim // 4)
-        self.gate = nn.Sequential(nn.Linear(2 * dim, h), nn.ReLU(inplace=True), nn.Linear(h, 1), nn.Sigmoid())
+        self.W_b = nn.Parameter(torch.empty(dim, dim))
+        self.gate = nn.Linear(3 * dim, 1, bias=True)
+        nn.init.eye_(self.W_b)
 
     def forward(self, hu: torch.Tensor, hv: torch.Tensor) -> torch.Tensor:
-        z = self.gate(torch.cat([hu, hv], dim=-1)).squeeze(-1)
-        s = (self.proj_u(hu) * self.proj_v(hv)).sum(-1)
-        return z * s
+        u = self.proj_u(hu)
+        v = self.proj_v(hv)
+        gate_features = torch.cat([u, v, u * v], dim=-1)
+        g = torch.sigmoid(self.gate(gate_features)).squeeze(-1)
+        bilinear = torch.einsum("bi,ij,bj->b", u, self.W_b, v)
+        return g * bilinear
 
 
 class _FiLMScore(nn.Module):
@@ -113,7 +125,7 @@ class _FiLMScore(nn.Module):
         return 0.5 * (dst_score + src_score)
 
 
-# -------------------------- 编码器（含注意力头门 + 类型化输入MLP） --------------------------
+# -------------------------- 编码器（含注意力头门 + 类型化线性投影） --------------------------
 
 class _FeatureOnlyEncoder(nn.Module):
     """Project frozen node features without reading graph topology."""
@@ -165,7 +177,6 @@ class _FullGraphHGTEncoder(nn.Module):
         head_gate: bool = False,
         residual_message_prior: float | None = None,
         feature_fusion: str = 'none', feature_graph_prior: float = 0.1,
-        proj_hidden_mult: int = 4, proj_dropout: float = 0.2,
         share_hgt_layers: bool = False,
     ):
         super().__init__()
@@ -193,8 +204,6 @@ class _FullGraphHGTEncoder(nn.Module):
         self.head_gate = head_gate
         self.num_propagation_steps = int(num_layers)
         self.share_hgt_layers = bool(share_hgt_layers)
-        self.proj_hidden_mult = max(1, int(proj_hidden_mult))
-        self.proj_dropout = float(proj_dropout)
         if self.num_propagation_steps < 1:
             raise ValueError("num_layers/propagation steps must be at least 1")
         self.feature_fusion = str(feature_fusion).strip().lower()
@@ -205,12 +214,9 @@ class _FullGraphHGTEncoder(nn.Module):
         if not 0.0 < feature_graph_prior < 1.0:
             raise ValueError("feature_graph_prior must be strictly between 0 and 1")
 
-        # === 每种节点类型一个输入投影 MLP（raw_dim -> 2*in_dim -> in_dim） ===
+        # Eq. (6): one type-specific linear projection per node type.
         self.in_dim = in_dim
         self.input_proj = nn.ModuleDict()
-        hidden_mult = self.proj_hidden_mult
-        proj_dropout = self.proj_dropout
-        hidden_dim = max(in_dim, hidden_mult * in_dim)
         for nt in self.ntypes_order:
             if 'features' not in g_hetero.nodes[nt].data:
                 raise KeyError(f"节点类型 {nt} 缺少 'features'")
@@ -218,13 +224,7 @@ class _FullGraphHGTEncoder(nn.Module):
             if d_in == in_dim:
                 self.input_proj[nt] = nn.Identity()
             else:
-                self.input_proj[nt] = nn.Sequential(
-                    nn.Linear(d_in, hidden_dim, bias=True),
-                    nn.GELU(),
-                    nn.Dropout(proj_dropout),
-                    nn.Linear(hidden_dim, in_dim, bias=True),
-                    nn.LayerNorm(in_dim),
-                )
+                self.input_proj[nt] = nn.Linear(d_in, in_dim, bias=True)
 
         # 输入门控（可选）
         self.input_gate_type = input_gate_type
@@ -240,9 +240,7 @@ class _FullGraphHGTEncoder(nn.Module):
         self.residual_gate = residual_gate
         if residual_gate:
             self.res_proj = nn.ModuleList()
-            self.res_gate = (
-                nn.ParameterList() if self.share_hgt_layers else nn.ModuleList()
-            )
+            self.res_gate = nn.ModuleList()
         if head_gate:
             self.head_alphas = nn.ParameterList()
 
@@ -278,9 +276,7 @@ class _FullGraphHGTEncoder(nn.Module):
             for _ in range(self.num_propagation_steps):
                 self.norms.append(nn.LayerNorm(hid_dim))
                 if residual_gate:
-                    self.res_gate.append(
-                        nn.Parameter(torch.full((hid_dim,), float(residual_bias)))
-                    )
+                    self.res_gate.append(nn.Linear(2 * hid_dim, hid_dim, bias=True))
                 if head_gate:
                     self.head_alphas.append(nn.Parameter(torch.zeros(heads)))
         elif num_layers == 1:
@@ -292,7 +288,7 @@ class _FullGraphHGTEncoder(nn.Module):
             self.norms.append(nn.LayerNorm(out_dim))
             if residual_gate:
                 self.res_proj.append(nn.Linear(in_dim, out_dim, bias=False) if in_dim != out_dim else nn.Identity())
-                self.res_gate.append(nn.Linear(out_dim, out_dim, bias=True))
+                self.res_gate.append(nn.Linear(2 * out_dim, out_dim, bias=True))
             if head_gate:
                 self.head_alphas.append(nn.Parameter(torch.zeros(heads)))
         else:
@@ -305,7 +301,7 @@ class _FullGraphHGTEncoder(nn.Module):
             self.norms.append(nn.LayerNorm(hid_dim))
             if residual_gate:
                 self.res_proj.append(nn.Linear(in_dim, hid_dim, bias=False) if in_dim != hid_dim else nn.Identity())
-                self.res_gate.append(nn.Linear(hid_dim, hid_dim, bias=True))
+                self.res_gate.append(nn.Linear(2 * hid_dim, hid_dim, bias=True))
             if head_gate:
                 self.head_alphas.append(nn.Parameter(torch.zeros(heads)))
             # 中间层
@@ -317,7 +313,7 @@ class _FullGraphHGTEncoder(nn.Module):
                 self.norms.append(nn.LayerNorm(hid_dim))
                 if residual_gate:
                     self.res_proj.append(nn.Identity())
-                    self.res_gate.append(nn.Linear(hid_dim, hid_dim, bias=True))
+                    self.res_gate.append(nn.Linear(2 * hid_dim, hid_dim, bias=True))
                 if head_gate:
                     self.head_alphas.append(nn.Parameter(torch.zeros(heads)))
             # 输出层
@@ -328,11 +324,11 @@ class _FullGraphHGTEncoder(nn.Module):
             self.norms.append(nn.LayerNorm(out_dim))
             if residual_gate:
                 self.res_proj.append(nn.Linear(hid_dim, out_dim, bias=False) if hid_dim != out_dim else nn.Identity())
-                self.res_gate.append(nn.Linear(out_dim, out_dim, bias=True))
+                self.res_gate.append(nn.Linear(2 * out_dim, out_dim, bias=True))
             if head_gate:
                 self.head_alphas.append(nn.Parameter(torch.zeros(heads)))
 
-        if residual_gate and not self.share_hgt_layers:
+        if residual_gate:
             with torch.no_grad():
                 for g in self.res_gate:
                     nn.init.zeros_(g.weight); nn.init.constant_(g.bias, residual_bias)
@@ -422,7 +418,7 @@ class _FullGraphHGTEncoder(nn.Module):
         }
 
     def _build_homogeneous_features(self) -> torch.Tensor:
-        """将各类型 raw 特征用各自 MLP 投到 in_dim，并按同构顺序拼接为 h。"""
+        """用类型特异线性层投影原始特征，并按同构图顺序拼接。"""
         device = self.g_homo.device
         N = self.g_homo.num_nodes()
         h = torch.zeros(N, self.in_dim, device=device)
@@ -454,8 +450,7 @@ class _FullGraphHGTEncoder(nn.Module):
                 )
                 y = self._apply_head_gate(y, i)
                 if self.residual_gate:
-                    gate = torch.sigmoid(self.res_gate[i]).view(1, -1)
-                    y = gate * y + (1.0 - gate) * h
+                    y = _gated_residual(y, h, self.res_gate[i])
                 h = self.dropout(F.gelu(self.norms[i](y)))
             h = F.gelu(self.shared_output_norm(self.shared_output_adapter(h)))
         else:
@@ -464,8 +459,7 @@ class _FullGraphHGTEncoder(nn.Module):
                 y = self._apply_head_gate(y, i)
                 if self.residual_gate:
                     x = self.res_proj[i](h)
-                    g = torch.sigmoid(self.res_gate[i](y))
-                    y = g * y + (1.0 - g) * x
+                    y = _gated_residual(y, x, self.res_gate[i])
                 h = self.dropout(F.gelu(norm(y)))
 
         # Preserve a direct path from the projected pretrained features. The
@@ -526,7 +520,7 @@ class ScorePredictor(nn.Module):
             for et in self.etypes:
                 key = _etype_key(et)
                 mlp = nn.Sequential(
-                    nn.Linear(2 * out_dim, sem_hidden), nn.ReLU(inplace=True),
+                    nn.Linear(3 * out_dim, sem_hidden), nn.ReLU(inplace=True),
                     nn.Linear(sem_hidden, 1), nn.Sigmoid()
                 )
                 # 设定「最后一个 Linear」的偏置，不是 Sigmoid
@@ -566,7 +560,8 @@ class ScorePredictor(nn.Module):
                     hu, hv = edges.src['h'], edges.dst['h']
                     s = self._base_score(hu, hv)
                     if self.semantic_gate == 'etype':
-                        g = self.rel_gate[etype_key](torch.cat([hu, hv], dim=-1)).squeeze(-1)
+                        gate_features = torch.cat([hu, hv, hu * hv], dim=-1)
+                        g = self.rel_gate[etype_key](gate_features).squeeze(-1)
                         s = g * s
                     return {'score': s}
                 return _edge_udf
@@ -608,8 +603,6 @@ class HGTModel(nn.Module):
         residual_message_prior = _getattr(args, 'residual_message_prior', None)
         feature_fusion = _getattr(args, 'feature_fusion', 'none')
         feature_graph_prior = _getattr(args, 'feature_graph_prior', 0.1)
-        proj_hidden_mult = _getattr(args, 'proj_hidden_mult', 4)
-        proj_dropout = _getattr(args, 'proj_dropout', 0.2)
         share_hgt_layers = _getattr(args, 'share_hgt_layers', False)
         score_fusion = str(_getattr(args, 'score_fusion', 'none')).strip().lower()
         score_graph_prior = float(_getattr(args, 'score_graph_prior', 0.1))
@@ -652,8 +645,6 @@ class HGTModel(nn.Module):
                 residual_message_prior=residual_message_prior,
                 feature_fusion=feature_fusion,
                 feature_graph_prior=feature_graph_prior,
-                proj_hidden_mult=proj_hidden_mult,
-                proj_dropout=proj_dropout,
                 share_hgt_layers=share_hgt_layers,
             )
         else:

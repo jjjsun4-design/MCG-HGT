@@ -168,8 +168,6 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--val_every", type=int, default=3)
     parser.add_argument("--tau", type=float, default=0.07)
     parser.add_argument("--top_m", type=int, default=0)
-    parser.add_argument("--proj_hidden_mult", type=int, default=4)
-    parser.add_argument("--proj_dropout", type=float, default=0.2)
     parser.add_argument(
         "--fused_adamw",
         action=argparse.BooleanOptionalAction,

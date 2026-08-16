@@ -101,7 +101,7 @@ def _architecture_record(model) -> Dict[str, Any]:
         "attention_heads": int(encoder.heads),
         "hgt_parameter_sets": 1 if shared else steps,
         "weight_shared_hgt": shared,
-        "input_projection_hidden_multiplier": int(encoder.proj_hidden_mult),
+        "input_projection": "type_specific_linear",
     }
 
 
@@ -133,11 +133,13 @@ def _checkpoint_model_metadata(model, args) -> Dict[str, Any]:
         "sem_hidden": getattr(args, "sem_hidden", 64),
         "sem_gate_bias": getattr(args, "sem_gate_bias", 0.0),
         "head_gate": getattr(args, "head_gate", False),
-        "proj_hidden_mult": architecture.get(
-            "input_projection_hidden_multiplier",
-            getattr(args, "proj_hidden_mult", 4),
+        "input_projection": architecture.get(
+            "input_projection", "type_specific_linear"
         ),
-        "proj_dropout": getattr(args, "proj_dropout", 0.2),
+        "residual_gate_input": "message_residual_concat",
+        "gmu_gate_input": "projected_source_target_hadamard",
+        "bilinear_form": "full_matrix",
+        "semantic_gate_input": "source_target_hadamard",
     }
     model_config = {field: values[field] for field in MODEL_CONFIG_FIELDS}
     return {
@@ -2158,7 +2160,7 @@ def train(args, hetero_graph: dgl.DGLHeteroGraph, rel_list, device):
                 f"weight_shared={getattr(args,'share_hgt_layers',False)} | "
                 f"hgt_parameter_sets="
                 f"{1 if getattr(args,'share_hgt_layers',False) else args.num_layers} | "
-                f"proj_hidden_mult={getattr(args,'proj_hidden_mult',4)}\n"
+                f"input_projection=type_specific_linear\n"
                 f"[Model] input_gate={getattr(args,'input_gate_type','none')} "
                 f"(reduce={getattr(args,'input_gate_reduce',4)}) | "
                 f"residual_gate={getattr(args,'residual_gate',False)} | "
@@ -2433,9 +2435,7 @@ if __name__ == "__main__":
     parser.add_argument("--tau", type=float, default=0.07)
     parser.add_argument("--top_m", type=int, default=0)
 
-    # 输入投影 MLP 配置（已在 model_gated.py 内读取）
-    parser.add_argument("--proj_hidden_mult", type=int, default=4)
-    parser.add_argument("--proj_dropout", type=float, default=0.2)
+    # Publication implementation uses the fixed linear projection in Eq. (6).
     parser.add_argument("--fused_adamw", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--tf32", action=argparse.BooleanOptionalAction, default=True)
 

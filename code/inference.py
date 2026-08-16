@@ -47,8 +47,6 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--semantic_gate", choices=["none", "etype"], default=None)
     parser.add_argument("--sem_gate_bias", type=float, default=None)
     parser.add_argument("--head_gate", action=argparse.BooleanOptionalAction, default=None)
-    parser.add_argument("--proj_hidden_mult", type=int, default=None)
-    parser.add_argument("--proj_dropout", type=float, default=None)
     parser.add_argument(
         "--allow_legacy_unknown_graph_scope",
         action="store_true",
@@ -120,53 +118,12 @@ _ARCH_DEFAULTS = {
     "semantic_gate": "etype",
     "sem_gate_bias": 0.8,
     "head_gate": True,
-    "proj_hidden_mult": 4,
-    "proj_dropout": 0.2,
+    "input_projection": "type_specific_linear",
+    "residual_gate_input": "message_residual_concat",
+    "gmu_gate_input": "projected_source_target_hadamard",
+    "bilinear_form": "full_matrix",
+    "semantic_gate_input": "source_target_hadamard",
 }
-
-
-def _state_architecture(state):
-    keys = [str(key) for key in state]
-    shared = any("encoder.shared_hgt." in key for key in keys)
-    unshared = any("encoder.layers." in key for key in keys)
-    if not shared and not unshared:
-        return {"encoder_type": "feature_only"}
-    if shared and unshared:
-        raise ValueError("Checkpoint does not identify exactly one HGT parameter layout")
-    prefix = "module." if any(key.startswith("module.encoder.") for key in keys) else ""
-    result = {"encoder_type": "hgt", "share_hgt_layers": shared}
-    if shared:
-        norm_ids = {
-            int(key.split("encoder.norms.", 1)[1].split(".", 1)[0])
-            for key in keys if "encoder.norms." in key
-        }
-        result["num_layers"] = len(norm_ids)
-        for name, field in (
-            ("encoder.shared_input_adapter.weight", "h_dim"),
-            ("encoder.shared_output_norm.weight", "out_dim"),
-        ):
-            tensor = state.get(prefix + name)
-            if tensor is not None:
-                result[field] = int(tensor.shape[0])
-    else:
-        layer_ids = {
-            int(key.split("encoder.layers.", 1)[1].split(".", 1)[0])
-            for key in keys if "encoder.layers." in key
-        }
-        result["num_layers"] = len(layer_ids)
-        first_norm = state.get(prefix + "encoder.norms.0.weight")
-        last_norm = state.get(prefix + f"encoder.norms.{len(layer_ids) - 1}.weight")
-        if first_norm is not None:
-            result["h_dim"] = int(first_norm.shape[0])
-        if last_norm is not None:
-            result["out_dim"] = int(last_norm.shape[0])
-    for key, tensor in state.items():
-        if "encoder.input_proj." in str(key) and str(key).endswith(".3.weight"):
-            result["in_dim"] = int(tensor.shape[0])
-            hidden = int(tensor.shape[1])
-            result["proj_hidden_mult"] = max(1, hidden // result["in_dim"])
-            break
-    return result
 
 
 def _resolve_architecture(cli_args, payload, state):

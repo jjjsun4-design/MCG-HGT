@@ -45,7 +45,6 @@ class PublicationDefaultsTests(unittest.TestCase):
         self.assertEqual(args.num_layers, 3)
         self.assertEqual(args.hgt_heads, 8)
         self.assertFalse(args.share_hgt_layers)
-        self.assertEqual(args.proj_hidden_mult, 4)
         self.assertEqual(args.legacy_cv1_eval, "strict")
 
         cv_action = next(action for action in parser._actions if action.dest == "cv_mode")
@@ -61,7 +60,6 @@ class PublicationDefaultsTests(unittest.TestCase):
             "--num_layers": 3,
             "--hgt_heads": 8,
             "--share_hgt_layers": False,
-            "--proj_hidden_mult": 4,
             "--legacy_cv1_eval": "strict",
         }
         self.assertEqual({key: defaults[key] for key in expected}, expected)
@@ -72,7 +70,33 @@ class PublicationDefaultsTests(unittest.TestCase):
         self.assertEqual(defaults["num_layers"], 3)
         self.assertEqual(defaults["hgt_heads"], 8)
         self.assertFalse(defaults["share_hgt_layers"])
-        self.assertEqual(defaults["proj_hidden_mult"], 4)
+        self.assertEqual(defaults["input_projection"], "type_specific_linear")
+        self.assertEqual(
+            defaults["residual_gate_input"], "message_residual_concat"
+        )
+        self.assertEqual(
+            defaults["gmu_gate_input"], "projected_source_target_hadamard"
+        )
+        self.assertEqual(defaults["bilinear_form"], "full_matrix")
+        self.assertEqual(
+            defaults["semantic_gate_input"], "source_target_hadamard"
+        )
+
+    def test_model_source_matches_manuscript_formulas(self):
+        source = (ROOT / "model.py").read_text(encoding="utf-8")
+        expected_fragments = (
+            "nn.Linear(d_in, in_dim, bias=True)",
+            "gate_input = torch.cat([message, residual], dim=-1)",
+            "_gated_residual(y, x, self.res_gate[i])",
+            "self.W_b = nn.Parameter(torch.empty(dim, dim))",
+            'torch.einsum("bi,ij,bj->b", u, self.W_b, v)',
+            "torch.cat([u, v, u * v], dim=-1)",
+            "nn.Linear(3 * out_dim, sem_hidden)",
+            "torch.cat([hu, hv, hu * hv], dim=-1)",
+        )
+        for fragment in expected_fragments:
+            self.assertIn(fragment, source)
+        self.assertNotIn("proj_hidden_mult", source)
 
 
 if __name__ == "__main__":
