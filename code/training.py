@@ -2385,7 +2385,7 @@ if __name__ == "__main__":
     parser.add_argument("--dropout", type=float, default=0.2)
 
     # 门控/语义
-    parser.add_argument("--input_gate_type", choices=["none","se","glu","etype"], default="glu",
+    parser.add_argument("--input_gate_type", choices=["none","se","glu","etype"], default="none",
                         help="'etype' 作为旧版别名，将自动映射到 'se'")
     parser.add_argument("--input_gate_reduce", type=int, default=4)
     parser.add_argument("--residual_gate", action=argparse.BooleanOptionalAction, default=True)
@@ -2398,7 +2398,7 @@ if __name__ == "__main__":
     parser.add_argument("--film_condition", choices=["src","dst","both"], default="src")
     parser.add_argument("--semantic_gate", choices=["none","etype"], default="etype")
     parser.add_argument("--sem_gate_bias", type=float, default=0.8)
-    parser.add_argument("--head_gate", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--head_gate", action=argparse.BooleanOptionalAction, default=False)
 
     # ====== LLM 嵌入消融（新增） ======
     parser.add_argument(

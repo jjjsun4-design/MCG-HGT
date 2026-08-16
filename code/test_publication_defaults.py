@@ -45,6 +45,8 @@ class PublicationDefaultsTests(unittest.TestCase):
         self.assertEqual(args.num_layers, 3)
         self.assertEqual(args.hgt_heads, 8)
         self.assertFalse(args.share_hgt_layers)
+        self.assertEqual(args.input_gate_type, "none")
+        self.assertFalse(args.head_gate)
         self.assertEqual(args.legacy_cv1_eval, "strict")
 
         cv_action = next(action for action in parser._actions if action.dest == "cv_mode")
@@ -60,6 +62,8 @@ class PublicationDefaultsTests(unittest.TestCase):
             "--num_layers": 3,
             "--hgt_heads": 8,
             "--share_hgt_layers": False,
+            "--input_gate_type": "none",
+            "--head_gate": False,
             "--legacy_cv1_eval": "strict",
         }
         self.assertEqual({key: defaults[key] for key in expected}, expected)
@@ -70,6 +74,8 @@ class PublicationDefaultsTests(unittest.TestCase):
         self.assertEqual(defaults["num_layers"], 3)
         self.assertEqual(defaults["hgt_heads"], 8)
         self.assertFalse(defaults["share_hgt_layers"])
+        self.assertEqual(defaults["input_gate_type"], "none")
+        self.assertFalse(defaults["head_gate"])
         self.assertEqual(defaults["input_projection"], "type_specific_linear")
         self.assertEqual(
             defaults["residual_gate_input"], "message_residual_concat"

@@ -116,7 +116,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--out_dim", type=int, default=512)
     parser.add_argument("--hgt_heads", type=int, default=8)
     parser.add_argument("--dropout", type=float, default=0.2)
-    parser.add_argument("--input_gate_type", choices=["none", "se", "glu", "etype"], default="glu")
+    parser.add_argument("--input_gate_type", choices=["none", "se", "glu", "etype"], default="none")
     parser.add_argument("--input_gate_reduce", type=int, default=4)
     parser.add_argument("--residual_gate", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument(
@@ -142,7 +142,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--film_condition", choices=["src", "dst", "both"], default="src")
     parser.add_argument("--semantic_gate", choices=["none", "etype"], default="etype")
     parser.add_argument("--sem_gate_bias", type=float, default=0.8)
-    parser.add_argument("--head_gate", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--head_gate", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument("--ablate_ligand_llm", action="store_true")
     parser.add_argument("--ablate_target_llm", action="store_true")
     parser.add_argument("--llm_ablation_mode", choices=["zero", "random", "shuffle"], default="zero")
