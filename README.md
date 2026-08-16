@@ -25,8 +25,12 @@ environment.yml        Conda environment
 
 ## Environment
 
-Use Python 3.10 or newer with PyTorch and DGL. Install the supplied environment
-or the Python requirements:
+The publication experiments were conducted with Python 3.8 and the package
+versions reported in Supporting Information Table S4. The current repository
+is also compatible with the newer supported Python environment specified in
+the supplied environment files.
+
+Install the supplied environment or the Python requirements:
 
 ```bash
 conda env create -f environment.yml
@@ -41,7 +45,8 @@ python -m pip install -r requirements.txt
 
 ## Usage
 
-Train the HIT 2.0 CVS1 model with the publication configuration:
+Run the HIT 2.0 CVS1 workflow with the manuscript-aligned default
+configuration:
 
 ```bash
 python code/main.py
